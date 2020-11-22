@@ -4,9 +4,9 @@ using namespace std;
 
 
 
-//Piece::Piece(int player): player(player){}
+/*Piece::Piece(int player): player(player){}
 
-//int Piece::getPlayer() const{return player;}
+int Piece::getPlayer() const{return player;}*/
 
 
 // ====================== CLASS BOARD ==========================
@@ -83,11 +83,11 @@ Agent::Agent(){}
 
 randomAgent::randomAgent(): Agent(){}
 
-pair<int,int> randomAgent::getMove(Board& B, int& player){
-    std::vector<std::pair<int,int>> playableMove = B.playableMoves(player);
+Move* randomAgent::getMove(Board& B, int& player){
+    std::vector< Move* > playableMove = B.playableMoves(player);
     int playableMoveSize = playableMove.size();
     int randomChoice = rand() % playableMoveSize;
-    pair<int,int> randomMove = playableMove[randomChoice];
+    Move* randomMove = playableMove[randomChoice]->clone();
     return randomMove;
 }
 
@@ -98,9 +98,9 @@ UCTAgent::UCTAgent(int iter_max) : Agent(){
 
 
 
-pair<int,int> UCTAgent::getMove(Board& B, int& player){
-    UCTNode root(B, player,pair<int,int>(-1,-1),true);
-    pair<int,int> best_move;
+Move* UCTAgent::getMove(Board& B, int& player){
+    UCTNode root(B, player,true);
+    Move* best_move;
     int newWins;
     for(int i =0; i<max_iter; i++){
         UCTNode* beforeLeaf = root.selectExpandedPath();
@@ -108,14 +108,14 @@ pair<int,int> UCTAgent::getMove(Board& B, int& player){
         newWins = leaf->rollout(player);
         leaf->backPropagation(newWins);
     }
-    best_move = root.selectionFinal()->getLastMove();
+    best_move = root.selectionFinal()->getLastMove()->clone();
     return best_move;
 }
 
 
 // ====================== CLASS UCTNODE =========================
 // TODO : CHECKER LA PARALLELISATION (PLUSIEURS METHODES: plusieurs arbres (avec enfants différents), bagging (juste lancement aléatoire).
-UCTNode::UCTNode(Board& currentB, int current_player, std::pair<int,int> current_last_move /*=std::pair<-1,-1> */, bool current_isRoot /*=false*/){
+UCTNode::UCTNode(Board& currentB, int current_player, Move* current_last_move /*=std::pair<-1,-1> */, bool current_isRoot /*=false*/){
     B = currentB.clone();
     player = current_player;
     isRoot = current_isRoot;
@@ -126,6 +126,25 @@ UCTNode::UCTNode(Board& currentB, int current_player, std::pair<int,int> current
     wins = 0;
     remainingMoves = B->playableMoves(player);
     lastMove = current_last_move;
+    if (B->playableMoves(player).size() == 0){
+        isTerminal = true;
+    }
+    else {
+        isTerminal = false;
+    }
+}
+
+
+UCTNode::UCTNode(Board& currentB, int current_player, bool current_isRoot /*= false*/){
+    B = currentB.clone();
+    player = current_player;
+    isRoot = current_isRoot;
+    if(isRoot){
+        visits = 1;
+    }
+    else {visits=0;}
+    wins = 0;
+    remainingMoves = B->playableMoves(player);
     if (B->playableMoves(player).size() == 0){
         isTerminal = true;
     }
@@ -152,6 +171,7 @@ UCTNode::~UCTNode(){
     for(vector<UCTNode*>::iterator it = childNodes.begin(); it < childNodes.end(); it++){ // Garder le sous arbre du noeud choisi.
         (*it)->~UCTNode();
     }
+    delete lastMove;
 }
 
 int UCTNode::getPlayer() const{
@@ -203,15 +223,11 @@ UCTNode* UCTNode::selectionFinal(){
     for(vector<UCTNode*>::iterator it = childNodes.begin(); it < childNodes.end(); it++){
         float childWin = float((*it)->getWins());
         float childVisit = float((*it)->getVisits());
-
         value = abs(childWin/childVisit);
-
-
         if(value >= max){
             max = value;
             bestChild = *it;
         }
-
     }
     return bestChild;
 }
@@ -232,8 +248,8 @@ UCTNode* UCTNode::expand(){
 
     if (remainingSize>0){ // Not terminal node (Check terminal better ?)
         int randomChoice = rand() % remainingSize;
-        pair<int,int> randomMove = remainingMoves[randomChoice];
-        remainingMoves.erase(remainingMoves.begin()+randomChoice);
+        Move* randomMove = remainingMoves[randomChoice]->clone();
+        remainingMoves.erase(remainingMoves.begin()+randomChoice); // TODO Check if it is properly deleted ? Memory leak i think ?
         Board* newBoard = B->clone();
         newBoard->playMove(randomMove, player);
         UCTNode* newChildNode = new UCTNode(*newBoard, -player, randomMove, false);
@@ -257,10 +273,10 @@ int UCTNode::rollout(int globalPlayer){
     int auxPlayer = player;
     int valueWins;
     while (!newBoard->getEndGameValue()){
-        std::vector<std::pair<int,int>> playableMove = newBoard->playableMoves(auxPlayer);
+        std::vector< Move* > playableMove = newBoard->playableMoves(auxPlayer);
         int movesSize = playableMove.size();
         int randomChoice = rand() % movesSize;
-        pair<int,int> randomMove = playableMove[randomChoice];
+        Move* randomMove = playableMove[randomChoice];
         newBoard->playMove(randomMove, auxPlayer);
         auxPlayer *=-1;
     }
@@ -288,7 +304,7 @@ childNodes(node.childNodes), player(node.player), visits(node.visits), wins(node
 }
 
 
-std::pair<int,int> UCTNode::getLastMove() const{
+Move* UCTNode::getLastMove() const{
     return lastMove;
 }
 

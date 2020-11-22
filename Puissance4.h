@@ -15,6 +15,18 @@ const pair<int,int> NW(-1,1);
 const pair<int,int> direction[8]= {N,NE,E,SE,S,SW,W,NW};
 
 
+class ConnectFourMove: public Move{
+protected :
+    std::pair<int,int> location;
+
+public:
+    ConnectFourMove(pair<int,int> location, int player): Move(player), location(location){}
+    Move* clone();
+    int getx() const;
+    int gety() const;
+};
+
+
 class ConnectFourBoard: public Board {
 private:
     int* tab;
@@ -37,8 +49,8 @@ public:
     void reset();
     bool endGame();
     bool winGame(int x, int y , int& player);
-    std::vector<std::pair<int,int>> playableMoves(int playerNumber);
-    void playMove(const std::pair<int, int>& move, int player); // Change inplace the state of the board
+    std::vector<Move*> playableMoves(int playerNumber);
+    void playMove(const Move* move, int player); // Change inplace the state of the board
 
 };
 

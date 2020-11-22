@@ -22,11 +22,23 @@ void printResult(ConnectFourBoard& b){
         cout << " " << endl;
     }
 }
-// =================== PUISSANCE 4 CHIP ======================
+// =================== PUISSANCE 4 MOVE ======================
 
-//ConnectFourBoardChip::ConnectFourBoardChip(int player): Piece(player) {}
+//std::pair<int,int> ConnectFourMove::getLocation(){
+//    return location;
+//}
 
+Move* ConnectFourMove::clone(){
+    return new ConnectFourMove(location, player);
+}
 
+int ConnectFourMove::getx() const{
+    return location.first;
+}
+
+int ConnectFourMove::gety() const{
+    return location.second;
+}
 // ====================== CLASS GAME ============================
 
 
@@ -41,11 +53,11 @@ int Puissance4::play(){
     int player1 = 1;
     int player2 = -1;
 
-    pair<int,int> move1;
-    pair<int,int> move2;
+    Move* move1;
+    Move* move2;
     while (!B.getEndGameValue()){
         auto start = high_resolution_clock::now();
-        move1 = agent1->getMove(B, player1);
+        move1 = agent1->getMove(B, player1)->clone();
         auto stop = high_resolution_clock::now();
 //        auto duration = duration_cast<microseconds>(stop - start);
 //        cout << "Duration : " << duration.count() << endl;
@@ -158,8 +170,8 @@ bool ConnectFourBoard::colComplete(int colNumber){
     }
 }
 
-std::vector<std::pair<int,int>> ConnectFourBoard::playableMoves(int playerNumber){
-    std::vector<std::pair<int,int>> playMoves;
+std::vector<Move*> ConnectFourBoard::playableMoves(int playerNumber){
+    std::vector<Move*> playMoves;
     if (endGameValue){
         return playMoves;
     }
@@ -170,7 +182,7 @@ std::vector<std::pair<int,int>> ConnectFourBoard::playableMoves(int playerNumber
             while(ligne>-1 && getPiecePlayer(ligne,col)==0){
                 ligne--;
             }
-            std::pair<int,int> move(ligne+1,col);
+            ConnectFourMove* move = new ConnectFourMove(std::pair<int,int>(ligne+1,col), playerNumber);
 //            cout << move.first << " ; " << move.second << endl;
             playMoves.push_back(move);
         }
@@ -178,9 +190,9 @@ std::vector<std::pair<int,int>> ConnectFourBoard::playableMoves(int playerNumber
     return playMoves;
 }
 
-void ConnectFourBoard::playMove(const std::pair<int,int>& move, int player){
-    int x = move.first;
-    int y = move.second;
+void ConnectFourBoard::playMove(const Move* move, int player){
+    int x = move->getx();
+    int y = move->gety();
     int index = getIndex(x,y);
     tab[index] = player;
     if(winGame(x,y,player)){
@@ -286,11 +298,11 @@ int main(int argc, char* argv[]) {
         b.addPiece(0,i, 1);
     }
     int player = 1;
-    pair<int,int> move = agent2->getMove(b,player);
-    cout << move.first << " ; " << move.second << endl;
+    Move* move = agent2->getMove(b,player)->clone();
+    cout << move->getx() << " ; " << move->gety() << endl;
     player = -1;
-    move = agent1->getMove(b,player);
-    cout << move.first << " ; " << move.second << endl;
+    move = agent1->getMove(b,player)->clone();
+    cout << move->getx() << " ; " << move->gety() << endl;
 
 
     return 1;

@@ -27,6 +27,20 @@ using namespace std;
 //};
 
 
+class Move{
+protected:
+    int player;
+public:
+    Move(int player):player(player){}
+    virtual ~Move(){}
+    virtual Move* clone() = 0;
+    virtual int getx() const=0 ;
+    virtual int gety() const =0;
+    int getPlayer() const;
+
+
+};
+
 
 class Board{
 protected:
@@ -61,8 +75,8 @@ public:
     virtual bool winGame(int x, int y , int& player) = 0;
 
     // TODO Faire une classe move
-    virtual std::vector<std::pair<int,int>> playableMoves(int playerNumber) = 0;
-    virtual void playMove(const std::pair<int, int>& move, int player) = 0; // Change inplace the state of the board
+    virtual std::vector< Move* > playableMoves(int playerNumber) = 0;
+    virtual void playMove(const Move* move, int player) = 0; // Change inplace the state of the board
 };
 
 
@@ -71,7 +85,7 @@ class Agent{
 public:
     Agent();
     virtual ~Agent(){}
-    virtual pair<int,int> getMove(Board& B, int& player) = 0;
+    virtual Move* getMove(Board& B, int& player) = 0;
 };
 
 
@@ -82,7 +96,7 @@ protected :
 public:
     UCTAgent(int iter_max = 1500);
     ~UCTAgent(){}
-    virtual pair<int,int> getMove(Board& B, int& player);
+    virtual Move* getMove(Board& B, int& player);
 };
 
 
@@ -90,7 +104,7 @@ class randomAgent: public Agent{
 public:
     randomAgent();
     ~randomAgent(){}
-    virtual pair<int,int> getMove(Board& B, int& player);
+    virtual Move* getMove(Board& B, int& player);
 };
 
 
@@ -102,8 +116,8 @@ private :
     bool isRoot;
     bool isTerminal;
     UCTNode* parent;
-    std::pair<int,int> lastMove;
-    vector<pair<int,int>> remainingMoves;
+    Move* lastMove;
+    vector< Move* > remainingMoves;
     vector<UCTNode*> childNodes;
     int player;
     int visits;
@@ -111,8 +125,8 @@ private :
 
 
 public :
-    UCTNode(Board& currentB,  int player, std::pair<int,int> last_move = std::pair<int,int>(-1,-1), bool isRoot = false);
-//    UCTNode(Board currentB, int current_player, bool current_isRoot = false);
+    UCTNode(Board& currentB,  int player, Move* last_move, bool isRoot = false);
+    UCTNode(Board& currentB, int current_player, bool current_isRoot = false);
     ~UCTNode();
 
     int getPlayer() const;
@@ -121,7 +135,7 @@ public :
     void addWins(int newWins);
     bool getIsRoot() const;
     bool getIsTerminal() const;
-    std::pair<int,int> getLastMove() const;
+    Move* getLastMove() const;
     UCTNode* selection(bool verbose = false);
     UCTNode* selectionFinal();
     bool isFullyExpanded() const;
