@@ -4,7 +4,13 @@ list(APPEND CMAKE_MODULE_PATH "${p}") #For old Imagine++
 list(APPEND CMAKE_SYSTEM_FRAMEWORK_PATH /Library/Frameworks) #Mac, why not auto?
 find_package(Imagine REQUIRED)
 
-project(Puissance4)
-add_executable(Puissance4 Game.cpp Game.h Puissance4.cpp Puissance4.h Agent.cpp Agent.h)
-ImagineUseModules(Puissance4 LinAlg Images)
+set(SRCS
+    ../Game.cpp 
+    ../Game.h
+    ../Agent.cpp
+    ../Agent.h)
+
+project(Checkers)
+add_executable(Checkers ${SRCS} Checkers.cpp Checkers.h)
+ImagineUseModules(Checkers LinAlg Images)
 
